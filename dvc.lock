@@ -1,0 +1,92 @@
+schema: '2.0'
+stages:
+  data_split:
+    cmd: python src/data_split.py data/telecom_churn.csv
+    deps:
+    - path: src/data_split.py
+      md5: 79ef2468c27571601c2e4ed557ab0a53
+      size: 1228
+    params:
+      params.yaml:
+        base.random_state: 47
+        data_source.local_path: data/telecom_churn.csv
+        split.split_ratio: 0.2
+    outs:
+    - path: data/split
+      md5: d95f200a6359b0cd81c0d591734939a7.dir
+      size: 134685
+      nfiles: 2
+  data_processing:
+    cmd: python src/data_processing.py data/processed
+    deps:
+    - path: data/split
+      md5: d95f200a6359b0cd81c0d591734939a7.dir
+      size: 134685
+      nfiles: 2
+    - path: src/data_processing.py
+      md5: f9328a5ce9fd23dd845fcd06de47cfea
+      size: 1416
+    params:
+      params.yaml:
+        process.dir: data/processed
+        process.test_file: final_test.csv
+        process.train_file: final_train.csv
+        split.dir: data/split
+        split.test_file: test.csv
+        split.train_file: train.csv
+    outs:
+    - path: data/processed
+      md5: 878d1c18179af2f5d8e8082d444a80b2.dir
+      size: 134685
+      nfiles: 2
+  train:
+    cmd: python src/train.py data/features model/model.pkl
+    deps:
+    - path: data/processed
+      md5: 878d1c18179af2f5d8e8082d444a80b2.dir
+      size: 134685
+      nfiles: 2
+    - path: src/train.py
+      md5: 4d59858d9b2d40c0f73cf1eb068f64d7
+      size: 2400
+    params:
+      params.yaml:
+        base.random_state: 47
+        base.target_col: Churn
+        model_dir: model
+        process.dir: data/processed
+        process.test_file: final_test.csv
+        process.train_file: final_train.csv
+        train.n_est: 300
+    outs:
+    - path: model/model.pkl
+      md5: 4bf0a28f25dfbd9ae5552eacd38fcb28
+      size: 8296986
+  evaluate:
+    cmd: python src/evaluate.py model/model.pkl data/processed
+    deps:
+    - path: data/processed
+      md5: 878d1c18179af2f5d8e8082d444a80b2.dir
+      size: 134685
+      nfiles: 2
+    - path: model/model.pkl
+      md5: 4bf0a28f25dfbd9ae5552eacd38fcb28
+      size: 8296986
+    - path: src/evaluate.py
+      md5: 70d4fabd25006c687edc61186bbcf8c2
+      size: 7470
+    outs:
+    - path: eval/importance.png
+      md5: 60e444be38a664f451ef860bf5ba2098
+      size: 25210
+    - path: eval/live/metrics.json
+      md5: e353eb7fe1d016c452d6e5b17e6d1793
+      size: 492
+    - path: eval/live/plots
+      md5: 12b9cbedfdbe1685be0e1df3d973cfed.dir
+      size: 234816
+      nfiles: 4
+    - path: eval/prc
+      md5: 6b56c324f898d44db765dde5f1738497.dir
+      size: 48064
+      nfiles: 2
